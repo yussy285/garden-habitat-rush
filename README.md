@@ -1,8 +1,10 @@
 # 🏡 Garden Habitat Rush (60-Second Sanctuary)
 
+<img width="1124" height="692" alt="screenshot" src="https://github.com/user-attachments/assets/284b9f32-d83f-4ded-aace-ac82be453d31" />
+
 A browser game where you decode animals' clues, gather the right materials from the garden, and build three homes before the clock runs out. Each home needs 3 materials, and each round the clock runs faster.
 
-**▶ Play it:** _add your GitHub Pages link here_
+**▶ Play it:** https://yussy285.github.io/garden-habitat-rush/
 
 ## How to play
 1. Three random animals need houses, but nobody tells you what to build with.
