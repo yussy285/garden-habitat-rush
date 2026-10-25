@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Garden Habitat Rush</title>
+<style>
+*{box-sizing:border-box}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#e8f5e0;--ink:#25402b;--panel:#fffdf6;--line:#bfd8b0;--g1:#8fd16a;--g2:#7cc258;--warn:#e5484d}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14221a;--ink:#e6f3e0;--panel:#1f3326;--line:#35563f;--g1:#3f7f3a;--g2:#377234}}
+:root[data-theme="dark"]{--bg:#14221a;--ink:#e6f3e0;--panel:#1f3326;--line:#35563f;--g1:#3f7f3a;--g2:#377234}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Trebuchet MS",system-ui,sans-serif;display:flex;justify-content:center;overflow:hidden;user-select:none;-webkit-tap-highlight-color:transparent}
+#game{width:100%;max-width:960px;height:100%;display:flex;flex-direction:column;gap:8px;padding:8px;position:relative}
+#hud{display:flex;align-items:center;gap:10px;background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:6px 10px;flex-wrap:wrap}
+.stat{font-weight:700;font-size:clamp(13px,3.4vw,18px)}
+#timer{font-size:clamp(22px,6vw,32px);font-weight:900;min-width:2.2ch;font-variant-numeric:tabular-nums}
+#timer.urgent{color:var(--warn);animation:pulse .45s infinite alternate}
+#bar{flex:1 1 90px;height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+#bar i{display:block;height:100%;width:100%;background:#4cbb5a;transition:width .1s linear}
+#bar.urgent i{background:var(--warn)}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:6px 12px;background:#ffcf4a;color:#3b2b00;cursor:pointer;box-shadow:0 3px 0 #c99a1d}
+button:active{transform:translateY(2px);box-shadow:0 1px 0 #c99a1d}
+#held{width:46px;height:46px;border:2px dashed var(--line);border-radius:12px;display:grid;place-items:center;background:var(--bg);cursor:pointer}
+#held svg{width:36px;height:36px}
+#held.pop{animation:pop .3s}
+#sites{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.site{position:relative;height:clamp(200px,34vh,260px);background:var(--panel);border:3px dashed var(--line);border-radius:16px;cursor:pointer}
+.holding .site:not(.done){border-color:#ffb020;animation:glow 1s infinite alternate}
+.site.done{border-style:solid;border-color:#4cbb5a}
+.site.shake{animation:shake .4s}
+.bubble{position:absolute;left:4px;right:4px;top:6px;min-height:2.4em;background:#fff;color:#25402b;border-radius:12px;padding:4px 8px;font-size:clamp(10px,2.6vw,14px);line-height:1.25;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
+.t:empty{display:none}.tap{margin-top:3px;background:#ffcf4a;color:#3b2b00;border-radius:8px;padding:2px 6px;font-weight:700;text-align:center;animation:glow 1s infinite alternate}.done .tap{display:none}
+
+.animal{position:absolute;left:3%;bottom:22px;width:32%;transition:left .6s,width .6s,bottom .6s;animation:bob 2s ease-in-out infinite}
+.animal svg,.house svg{width:100%;height:auto;display:block}
+.house{position:absolute;right:2%;bottom:6px;width:64%}
+.house.bounce{animation:pop .5s}
+.done .animal{left:54%;bottom:8px;width:24%;z-index:2;animation:jump .45s ease-in-out infinite alternate}
+.pips{position:absolute;left:6px;bottom:4px;display:flex;gap:4px}
+.pips u{width:10px;height:10px;border-radius:50%;border:2px solid var(--line)}
+.pips u.on{background:#4cbb5a;border-color:#4cbb5a}
+#yard{flex:1;position:relative;border-radius:18px;background:radial-gradient(circle at 20% 20%,rgba(255,255,255,.18),transparent 40%),repeating-linear-gradient(45deg,var(--g1) 0 22px,var(--g2) 22px 44px);border:3px solid var(--line);overflow:hidden;min-height:140px}
+.item{position:absolute;width:clamp(40px,8vw,58px);padding:0;background:none;box-shadow:none;border-radius:50%;transform:rotate(var(--r));transition:scale .15s}
+.item:hover{scale:1.15}
+.item svg{width:100%;height:auto;display:block;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+.item.drop{animation:drop .45s}
+#ov{position:absolute;inset:0;background:rgba(10,30,15,.65);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+#ov.hide{display:none}
+#card{background:var(--panel);border-radius:20px;padding:20px 22px;max-width:430px;text-align:center;animation:popin .35s;border:3px solid var(--line)}
+#card h2{margin:0 0 8px;font-size:clamp(20px,5vw,28px)}
+#card p{margin:0 0 14px;line-height:1.45}
+#card button+button{margin-left:8px;background:#e3e3e3;box-shadow:0 3px 0 #b5b5b5}
+#mute{padding:6px 9px}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:30;overflow:hidden}
+.conf{position:absolute;left:50%;top:50%;width:10px;height:14px;font-size:20px;line-height:14px;animation:burst var(--d) cubic-bezier(.2,.7,.3,1) forwards}
+@keyframes pulse{to{transform:scale(1.25)}}
+@keyframes pop{50%{transform:scale(1.25)}}
+@keyframes popin{from{transform:scale(.6);opacity:0}}
+@keyframes bob{50%{transform:translateY(-4px)}}
+@keyframes jump{to{transform:translateY(-14px) rotate(6deg)}}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes glow{to{box-shadow:0 0 0 5px rgba(255,176,32,.4)}}
+@keyframes drop{0%{transform:translateY(-30px) scale(.6) rotate(var(--r))}60%{transform:translateY(6px) scale(1.1) rotate(var(--r))}}
+@keyframes burst{0%{transform:translate(0,0) scale(.4)}40%{transform:translate(var(--x),var(--y)) rotate(200deg) scale(1)}100%{transform:translate(calc(var(--x)*1.3),60vh) rotate(720deg);opacity:0}}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="hud">
+    <span id="timer">60</span>
+    <div id="bar"><i></i></div>
+    <span class="stat">⭐ <span id="score">0</span></span>
+    <span class="stat">Round <span id="round">1</span></span>
+    <span class="stat">🏆 <span id="best">0</span></span>
+    <button id="mute" title="Sound on/off">🔊</button>
+    <div id="held" title="Tap to put the item back"></div>
+    <button id="reset">↻ Reset</button>
+  </div>
+  <div id="sites"></div>
+  <div id="yard"></div>
+  <div id="ov"><div id="card"></div></div>
+</div>
+<div id="fx"></div>
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const R=a=>a[Math.random()*a.length|0];
+const sh=a=>a.map(v=>[Math.random(),v]).sort((p,q)=>p[0]-q[0]).map(p=>p[1]);
+const E=(x,y)=>`<circle cx="${x}" cy="${y}" r="3" fill="#222"/>`;
+const MAT={
+wood:{n:"Wood",s:`<svg viewBox="0 0 48 48"><rect x="4" y="14" width="34" height="22" rx="5" fill="#9a6232"/><path d="M8 20h24M8 30h24" stroke="#7a4a22" stroke-width="2" stroke-linecap="round"/><ellipse cx="38" cy="25" rx="7" ry="11" fill="#d9a066" stroke="#7a4a22" stroke-width="2"/><ellipse cx="38" cy="25" rx="3.5" ry="6" fill="none" stroke="#a8713c" stroke-width="2"/></svg>`},
+twigs:{n:"Twigs",s:`<svg viewBox="0 0 48 48"><path d="M6 40L40 8M10 30l12-2M20 22l-2-12M30 16l10 2M16 36l14 2" stroke="#7b5230" stroke-width="3.5" stroke-linecap="round" fill="none"/><ellipse cx="22" cy="28" rx="5" ry="3" fill="#59b45a" transform="rotate(-30 22 28)"/><ellipse cx="36" cy="17" rx="5" ry="3" fill="#59b45a" transform="rotate(20 36 17)"/></svg>`},
+stone:{n:"Stone",s:`<svg viewBox="0 0 48 48"><path d="M5 38l5-14 12-6 14 4 8 14-6 6H11z" fill="#9aa3ab"/><path d="M10 24l12-6 14 4-8 6z" fill="#c3cbd2"/><path d="M28 28l8-6 8 14-6 6z" fill="#7d868e"/></svg>`},
+mud:{n:"Mud",s:`<svg viewBox="0 0 48 48"><path d="M5 36c-1-8 6-14 12-13 3-6 14-6 17 0 7 0 12 6 10 13-1 5-8 6-20 6S6 41 5 36z" fill="#6b4328"/><ellipse cx="20" cy="30" rx="6" ry="3" fill="#8a5d3a"/><circle cx="33" cy="33" r="2.5" fill="#8a5d3a"/></svg>`},
+leaves:{n:"Leaves",s:`<svg viewBox="0 0 48 48"><path d="M6 36C6 18 20 8 40 8c0 20-12 32-30 32z" fill="#3fae4f"/><path d="M8 38C18 28 26 20 36 12" stroke="#2b7f39" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>`},
+straw:{n:"Straw",s:`<svg viewBox="0 0 48 48"><g stroke="#e0b73a" stroke-width="3" stroke-linecap="round"><path d="M10 40L18 8M17 41L22 8M24 42L26 7M31 41L30 8M38 40L34 9"/></g><path d="M10 26h28" stroke="#b9892a" stroke-width="4" stroke-linecap="round"/></svg>`},
+shell:{n:"Shell",s:`<svg viewBox="0 0 48 48"><path d="M24 6C10 6 4 22 6 34c2 6 10 8 18 8s16-2 18-8c2-12-4-28-18-28z" fill="#ffb8c8"/><path d="M24 40V12M24 40L12 16M24 40L36 16M24 40L8 26M24 40L40 26" stroke="#e8809a" stroke-width="2" fill="none"/></svg>`},
+flower:{n:"Flower",s:`<svg viewBox="0 0 48 48"><g fill="#ff7bb0"><circle cx="24" cy="11" r="8"/><circle cx="37" cy="21" r="8"/><circle cx="32" cy="36" r="8"/><circle cx="16" cy="36" r="8"/><circle cx="11" cy="21" r="8"/></g><circle cx="24" cy="25" r="7" fill="#ffd23f"/></svg>`}
+};
+const ANI={
+bird:`<svg viewBox="0 0 64 64"><path d="M6 44l12-6 2 12z" fill="#2f7fd1"/><ellipse cx="30" cy="42" rx="20" ry="16" fill="#4aa3ff"/><circle cx="43" cy="26" r="11" fill="#4aa3ff"/><path d="M52 24l10 4-10 4z" fill="#ff9f1c"/><ellipse cx="28" cy="44" rx="10" ry="7" fill="#2f7fd1"/>${E(45,24)}<path d="M26 56v5M34 56v5" stroke="#ff9f1c" stroke-width="3"/></svg>`,
+turtle:`<svg viewBox="0 0 64 64"><rect x="14" y="48" width="9" height="10" rx="3" fill="#8bd06a"/><rect x="38" y="48" width="9" height="10" rx="3" fill="#8bd06a"/><circle cx="54" cy="40" r="8" fill="#8bd06a"/><path d="M6 52a24 24 0 0 1 48 0z" fill="#3f9a55"/><path d="M18 52a12 14 0 0 1 24 0M30 30v22" stroke="#2c7a40" stroke-width="2" fill="none"/>${E(56,38)}</svg>`,
+rabbit:`<svg viewBox="0 0 64 64"><ellipse cx="24" cy="14" rx="5" ry="13" fill="#f3e9df"/><ellipse cx="40" cy="14" rx="5" ry="13" fill="#f3e9df"/><ellipse cx="24" cy="15" rx="2.5" ry="9" fill="#ffb3c1"/><ellipse cx="40" cy="15" rx="2.5" ry="9" fill="#ffb3c1"/><ellipse cx="32" cy="46" rx="17" ry="15" fill="#f3e9df"/><circle cx="32" cy="30" r="13" fill="#f3e9df"/>${E(27,29)}${E(37,29)}<circle cx="32" cy="34" r="2.5" fill="#ff7b9c"/></svg>`,
+frog:`<svg viewBox="0 0 64 64"><ellipse cx="32" cy="44" rx="24" ry="16" fill="#5fcf5f"/><circle cx="20" cy="26" r="9" fill="#5fcf5f"/><circle cx="44" cy="26" r="9" fill="#5fcf5f"/><circle cx="20" cy="26" r="6" fill="#fff"/><circle cx="44" cy="26" r="6" fill="#fff"/>${E(20,26)}${E(44,26)}<path d="M20 46q12 10 24 0" stroke="#2c7a2c" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`,
+owl:`<svg viewBox="0 0 64 64"><path d="M14 18l6-10 8 8zM50 18l-6-10-8 8z" fill="#8a5a34"/><ellipse cx="32" cy="38" rx="20" ry="22" fill="#a56f43"/><ellipse cx="32" cy="46" rx="11" ry="12" fill="#e8c9a0"/><circle cx="23" cy="28" r="9" fill="#fff"/><circle cx="41" cy="28" r="9" fill="#fff"/>${E(23,28)}${E(41,28)}<path d="M28 34h8l-4 7z" fill="#ff9f1c"/></svg>`,
+squirrel:`<svg viewBox="0 0 64 64"><path d="M16 56C-2 50 2 18 22 12c-8 12 0 20 8 24z" fill="#c9701f"/><ellipse cx="34" cy="44" rx="15" ry="16" fill="#e0872b"/><ellipse cx="36" cy="48" rx="8" ry="10" fill="#f5d6a8"/><circle cx="38" cy="26" r="11" fill="#e0872b"/><circle cx="31" cy="16" r="4" fill="#e0872b"/><circle cx="45" cy="16" r="4" fill="#e0872b"/>${E(41,25)}<circle cx="47" cy="29" r="2" fill="#5b2e0c"/></svg>`
+};
+const INFO={
+bird:{need:["twigs","straw","flower"],clue:{twigs:"Something bendy to weave a sturdy nest!",straw:"Soft golden stuff to line the inside, please.",flower:"Something pretty to make it feel like home!"}},
+turtle:{need:["stone","mud","shell"],clue:{stone:"Something heavy and hard, so nothing gets in!",mud:"Something squishy to seal up the cracks.",shell:"Something smooth from the beach to decorate with."}},
+rabbit:{need:["wood","leaves","flower"],clue:{wood:"Sturdy planks from a fallen tree, please.",leaves:"Soft green bedding would be lovely.",flower:"A pretty something to brighten my doorway!"}},
+frog:{need:["mud","leaves","shell"],clue:{mud:"I love anything damp and squelchy!",leaves:"Big green things to hide under.",shell:"Something shiny from the water’s edge."}},
+owl:{need:["wood","twigs","stone"],clue:{wood:"A strong trunk-like beam feels like home.",twigs:"Some thin sticks to perch on.",stone:"Something heavy to keep my hollow steady."}},
+squirrel:{need:["wood","straw","leaves"],clue:{wood:"Something from a tree to build my treehouse.",straw:"Dry golden stuff for a warm bed.",leaves:"A leafy green roof to keep me hidden."}}
+};
+const IDLE=["Hey, I’m still waiting!","This house isn’t going to build itself!","It’s getting cold out here!"];
+const WRONG=["Hmm, I don’t think I can live in that!","Are you sure? That doesn’t look cozy to me."];
+const DONE=["Ooh, I love my new home!","Thank you so much! You’re a master builder!"];
+const HALF=["Ooh, that’s a great start!","Yes, that’s just right — keep going!"];
+const LS=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+const S={score:0,round:1,last:Date.now(),idleAt:0,best:+LS("ghr-best")||0,mute:LS("ghr-mute")==="1"};
+const T0=90;
+const spd=()=>Math.min(2.5,1+.12*(S.round-1));
+let AC;
+const snd=(f,d=.12,ty="sine",v=.15,w=0,f2)=>{if(S.mute)return;try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();if(AC.state==="suspended")AC.resume();const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime+w;o.type=ty;o.frequency.value=f;if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+d);g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+d);}catch(e){}};
+const seq=(a,ty)=>a.forEach((f,i)=>snd(f,.18,ty||"triangle",.15,i*.12));
+const CT={bird:"Tweet tweet!",turtle:"Stomp stomp!",rabbit:"Squeak squeak!",frog:"Ribbit!",owl:"Hoo hoo!",squirrel:"Chit-chit!"};
+const CRY={bird:[[2400,3300,.09,"sine",.1,0],[2400,3300,.09,"sine",.1,.16]],turtle:[[120,60,.14,"square",.12,0],[120,60,.14,"square",.12,.22],[120,60,.14,"square",.12,.44]],rabbit:[[1500,1000,.1,"sine",.1,0],[1500,1000,.1,"sine",.1,.15]],frog:[[230,130,.13,"sawtooth",.07,0],[230,130,.13,"sawtooth",.07,.16]],owl:[[400,320,.32,"sine",.2,0],[400,320,.32,"sine",.2,.45]],squirrel:[0,1,2,3,4].map(j=>[1800,2500,.04,"square",.05,j*.07])};
+const cry=k=>CRY[k].forEach(a=>snd(a[0],a[2],a[3],a[4],a[5]+.5,a[1]));
+let LOG=[];try{LOG=JSON.parse(LS("ghr-log")||"[]")}catch(e){}
+const logRound=res=>{const ts=new Date().toISOString().slice(0,16);S.animals.forEach((a,i)=>LOG.push([ts,S.round,spd().toFixed(2),a,res,S.fin[i]==null?0:1,S.wr[i],S.hn[i],S.fin[i]==null?"":S.fin[i]]));LOG=LOG.slice(-600);LS("ghr-log",JSON.stringify(LOG));};
+const csv=()=>["timestamp,round,speed,animal,round_result,completed,wrong_placements,hints_used,seconds_to_finish"].concat(LOG.map(r=>r.join(","))).join("\n");
+
+const ART={
+bird:`<rect x="55" y="60" width="10" height="30" fill="#8a5a34"/><rect x="30" y="38" width="60" height="30" rx="3" fill="#e8b66b" stroke="#a87a42" stroke-width="3"/><path d="M24 40L60 10l36 30z" fill="#4aa3ff" stroke="#2f7fd1" stroke-width="3" stroke-linejoin="round"/><circle cx="60" cy="54" r="8" fill="#5a3a22"/><path d="M52 70h16" stroke="#a87a42" stroke-width="3"/>`,
+turtle:`<path d="M12 90a48 44 0 0 1 96 0z" fill="#9aa3ab" stroke="#6f7880" stroke-width="3"/><path d="M30 70h24M64 56h26M22 82h30M70 78h28" stroke="#6f7880" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M48 90V76a12 12 0 0 1 24 0v14z" fill="#3b2a1d"/>`,
+rabbit:`<path d="M8 90C14 40 40 26 60 26s46 14 52 64z" fill="#8a6b45" stroke="#6a4f2e" stroke-width="3"/><path d="M44 90V68a16 16 0 0 1 32 0v22z" fill="#2e1f12"/><circle cx="24" cy="62" r="5" fill="#ff7bb0"/><circle cx="96" cy="58" r="5" fill="#ffd23f"/><path d="M20 40q6-8 12 0M86 36q6-8 12 0" stroke="#4cbb5a" stroke-width="3" fill="none"/>`,
+frog:`<rect x="46" y="48" width="28" height="42" rx="6" fill="#f4ead2" stroke="#c9b98f" stroke-width="3"/><path d="M10 52C10 14 110 14 110 52z" fill="#e5484d" stroke="#a83236" stroke-width="3"/><circle cx="34" cy="38" r="6" fill="#fff"/><circle cx="62" cy="28" r="7" fill="#fff"/><circle cx="88" cy="40" r="5" fill="#fff"/><path d="M54 90V74a6 6 0 0 1 12 0v16z" fill="#5a3a22"/>`,
+owl:`<path d="M38 92L44 20h32l6 72z" fill="#8a5a34" stroke="#6a4224" stroke-width="3"/><ellipse cx="60" cy="48" rx="11" ry="14" fill="#2e1f12"/><path d="M44 28C26 22 18 14 10 16M76 28c18-6 26-14 34-12" stroke="#6a4224" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="14" cy="18" r="9" fill="#3fae4f"/><circle cx="106" cy="18" r="9" fill="#3fae4f"/>`,
+squirrel:`<rect x="50" y="52" width="20" height="40" fill="#8a5a34"/><rect x="22" y="48" width="76" height="8" fill="#b98a52"/><rect x="30" y="24" width="60" height="26" fill="#e9c58f" stroke="#a87a42" stroke-width="3"/><path d="M24 26L60 4l36 22z" fill="#3fae4f" stroke="#2b7f39" stroke-width="3" stroke-linejoin="round"/><rect x="52" y="32" width="16" height="18" rx="8" fill="#5a3a22"/>`};
+function house(k,n){
+const g='<rect x="4" y="88" width="112" height="8" rx="4" fill="#8a6a45"/>';
+const sc='<path d="M16 88V32M104 88V32M16 32H104M16 60H104M16 88L104 60" stroke="#b98a52" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>';
+if(n==0)return `<svg viewBox="0 0 120 100">${g}${sc}</svg>`;
+const y=[0,64,34,0][n];
+return `<svg viewBox="0 0 120 100">${g}${n<3?sc:""}<clipPath id="c${k}${n}"><rect x="0" y="${y}" width="120" height="${100-y}"/></clipPath><g clip-path="url(#c${k}${n})">${ART[k]}</g></svg>`;}
+
+function say(i,t,ms,idle){const b=$$(".bubble")[i];if(!b)return;b.querySelector(".t").textContent=t;b.classList.add("show");b.classList.toggle("idle",!!idle);S.until[i]=Date.now()+ms;}
+function isDone(i){return S.got[i].length>=INFO[S.animals[i]].need.length;}
+function hud(){const t=$("#timer");t.textContent=Math.ceil(S.t);const u=S.t<=10&&S.t>0;t.classList.toggle("urgent",u);$("#bar").classList.toggle("urgent",u);$("#bar i").style.width=S.t/T0*100+"%";$("#score").textContent=S.score;if(S.score>S.best){S.best=S.score;LS("ghr-best",S.best);}$("#round").textContent=S.round+(S.round>1?" · ×"+spd().toFixed(2):"");$("#best").textContent=S.best;$("#mute").textContent=S.mute?"🔇":"🔊";}
+function held(pop){const h=$("#held");h.innerHTML=S.sel?MAT[S.sel.t].s:"";$("#sites").classList.toggle("holding",!!S.sel);if(pop){h.classList.remove("pop");void h.offsetWidth;h.classList.add("pop");}}
+function place(it){const y=$("#yard"),W=y.clientWidth,H=y.clientHeight,z=58;let x,v;
+for(let n=0;n<50;n++){x=8+Math.random()*Math.max(0,W-z-16);v=8+Math.random()*Math.max(0,H-z-16);
+if(S.items.every(o=>o===it||o.el.style.display==="none"||Math.hypot((o.x??-999)-x,(o.y??-999)-v)>62))break;}
+it.x=x;it.y=v;const s=it.el.style;s.left=x/W*100+"%";s.top=v/H*100+"%";s.setProperty("--r",(Math.random()*40-20)+"deg");s.display="";
+it.el.classList.remove("drop");void it.el.offsetWidth;it.el.classList.add("drop");}
+
+function newRound(){
+const ks=sh(Object.keys(INFO)).slice(0,3);
+Object.assign(S,{animals:ks,got:ks.map(()=>[]),until:[0,0,0],sel:null,t:T0,run:false,items:[],wr:[0,0,0],hn:[0,0,0],fin:[null,null,null]});
+$("#yard").innerHTML="";
+$("#sites").innerHTML=ks.map((k,i)=>`<div class="site" data-i="${i}"><div class="bubble"><span class="t"></span><div class="tap">👆 Tap here for a clue</div></div><div class="animal">${ANI[k]}</div><div class="house">${house(k,0)}</div><div class="pips">${INFO[k].need.map(()=>"<u></u>").join("")}</div></div>`).join("");
+const types=ks.flatMap(k=>INFO[k].need).concat(sh(Object.keys(MAT)).slice(0,3));
+types.forEach((t,id)=>{const el=document.createElement("button");el.className="item";el.title=MAT[t].n;el.setAttribute("aria-label",MAT[t].n);el.innerHTML=MAT[t].s;$("#yard").appendChild(el);const it={id,t,el};place(it);S.items.push(it);});
+hud();held();ks.forEach((_,i)=>say(i,R(IDLE),5000,true));}
+
+function show(k){
+const c={
+intro:["Garden Habitat Rush","Three animals need a home, but they won’t tell you what to build with! Each home needs 3 materials. Tap the yellow “Tap here for a clue” button on an animal’s speech bubble to get a hint, grab the right material from the garden, then tap that animal’s building site to place it. Finish all three homes before the clock hits zero!","Start!"],
+win:["Sanctuary complete! 🎉",`All three homes are built with ${Math.ceil(S.t)}s to spare. Score: ${S.score}${S.score>=S.best&&S.score>0?" 🏆 New high score!":""}. Next round the clock runs faster (×${Math.min(2.5,1+.12*S.round).toFixed(2)})!`,"Next round"],
+lose:["Time’s up! ⏰",`The animals are still waiting… Score: ${S.score}`,"Try again"],
+end:["Thanks for playing! 👋",`Final score: ${S.score} · Best: ${S.best}. Take a break — the garden will be here when you’re back!`,"Play again"]}[k];
+$("#card").innerHTML=`<h2>${c[0]}</h2><p>${c[1]}</p><button id="go">${c[2]}</button>${k==="win"||k==="lose"?'<button id="quit">Quit</button>':""}${k!=="intro"?'<button id="dat">📊 Data</button>':""}`;
+const dq=$("#dat");if(dq)dq.onclick=()=>{$("#card").innerHTML=`<h2>Playtest data</h2><p>Select all, copy, and paste into a file named <b>playtests.csv</b> for the Python analysis.</p><textarea id="csv" readonly rows="8" style="width:100%;font-size:12px">${csv()}</textarea><p></p><button id="back">Back</button>`;$("#back").onclick=()=>show(k);};
+const q=$("#quit");if(q)q.onclick=()=>show("end");
+$("#ov").classList.remove("hide");
+$("#go").onclick=()=>{$("#ov").classList.add("hide");if(k!=="intro"){if(k==="win")S.round++;if(k==="end"){S.score=0;S.round=1;}newRound();}S.run=true;S.last=Date.now();};}
+
+function confetti(){const f=$("#fx"),c=["#ff595e","#ffca3a","#8ac926","#1982c4","#c77dff"];
+for(let k=0;k<60;k++){const p=document.createElement("i");p.className="conf";p.textContent=k%3?"":"★";
+p.style.cssText=`--x:${(Math.random()-.5)*90}vw;--y:${-10-Math.random()*40}vh;--d:${1.6+Math.random()*1.4}s;background:${k%3?c[k%5]:"none"};color:${c[k%5]}`;
+f.appendChild(p);setTimeout(()=>p.remove(),3200);}}
+
+function pick(it){if(!S.run||!it)return;if(S.sel)S.sel.el.style.display="";S.sel=it;it.el.style.display="none";held(true);snd(660,.08);}
+function hint(i){if(!S.run||isDone(i))return;const k=S.animals[i],m=INFO[k].need.find(x=>!S.got[i].includes(x));S.hn[i]++;say(i,INFO[k].clue[m],5000);}
+function deposit(i){
+if(!S.run||!S.sel)return;
+const k=S.animals[i],g=S.got[i],need=INFO[k].need,it=S.sel,site=$$(".site")[i];
+if(isDone(i)){say(i,"I already have a home — thank you!",2500);return;}
+if(need.includes(it.t)&&!g.includes(it.t)){
+g.push(it.t);S.sel=null;it.el.remove();S.items=S.items.filter(o=>o!==it);S.score+=10;
+const n=g.length,hs=site.querySelector(".house");
+$$("u",site).forEach((u,j)=>u.classList.toggle("on",j<n));
+hs.innerHTML=house(k,n);hs.classList.remove("bounce");void hs.offsetWidth;hs.classList.add("bounce");
+if(isDone(i)){site.classList.add("done");S.score+=50;S.fin[i]=+(T0-S.t).toFixed(1);seq([523,659,784,1047]);cry(k);say(i,CT[k]+" "+R(DONE),4500);if(S.animals.every((_,j)=>isDone(j)))win();}
+else{seq([523,659]);say(i,R(HALF),3000);}
+}else{
+S.score=Math.max(0,S.score-5);S.sel=null;place(it);snd(160,.25,"sawtooth",.1);S.wr[i]++;say(i,R(WRONG),3000);
+site.classList.remove("shake");void site.offsetWidth;site.classList.add("shake");}
+held();hud();}
+function win(){S.run=false;logRound("win");S.score+=Math.ceil(S.t)*5;hud();confetti();seq([523,659,784,1047,784,1047,1319]);setTimeout(()=>show("win"),1100);}
+
+$("#sites").onclick=e=>{const s=e.target.closest(".site");if(!s)return;const i=+s.dataset.i;e.target.closest(".bubble")?hint(i):deposit(i);};
+$("#yard").onclick=e=>{const b=e.target.closest(".item");if(b)pick(S.items.find(o=>o.el===b));};
+$("#held").onclick=()=>{if(S.run&&S.sel){S.sel.el.style.display="";S.sel=null;held();snd(440,.08);}};
+$("#mute").onclick=()=>{S.mute=!S.mute;LS("ghr-mute",S.mute?"1":"0");hud();};
+$("#reset").onclick=()=>{S.score=0;S.round=1;newRound();show("intro");};
+
+setInterval(()=>{
+const n=Date.now(),dt=Math.min(.25,(n-S.last)/1000);S.last=n;
+$$(".bubble").forEach((b,i)=>{const t=b.querySelector(".t");if(n>S.until[i])t.textContent="";b.style.visibility=isDone(i)&&!t.textContent?"hidden":"";});
+if(!S.run)return;
+S.t-=dt*spd();const sec=Math.ceil(S.t);if(sec!==S.sec){S.sec=sec;if(sec<=10&&sec>0)snd(880,.06,"square",.06);}
+if(S.t<=0){S.t=0;S.run=false;S.sel=null;hud();logRound("lose");show("lose");seq([392,330,262,196],"sawtooth");return;}
+hud();
+if(n-S.idleAt>1000){S.idleAt=n;S.animals.forEach((_,i)=>{if(!isDone(i)&&n>S.until[i]&&Math.random()<.25)say(i,R(IDLE),3000,true);});}
+},100);
+
+newRound();show("intro");
+})();
+</script>
+</body>
+</html>
